@@ -1,9 +1,9 @@
-# C:\OCaml64\home\yvanp\.opam\4.14.0+mingw64c\bin\dune.exe exec .\src\main.exe
+# C:\OCaml64\home\yvanp\.opam\4.14.0+mingw64c\bin\dune.exe exec ./src/main.exe
 # OCAMLPARAM: unset
 # Shared cache: disabled
 # Workspace root: "C:\\OCaml64\\home\\yvanp\\quadratic_sieve"
 # Auto-detected concurrency: 8
-$ C:\OCaml64\home\yvanp\.opam\4.14.0+mingw64c\bin\ocamlc.opt.exe -config > C:\OCaml64\tmp\dune_ee22ea_output
+$ C:\OCaml64\home\yvanp\.opam\4.14.0+mingw64c\bin\ocamlc.opt.exe -config > C:\OCaml64\tmp\dune_953e90_output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
