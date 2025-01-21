@@ -1,1 +1,4 @@
-(executable (name main))
+(executable 
+ (name main)
+ (libraries num)
+ (modules utilities main))

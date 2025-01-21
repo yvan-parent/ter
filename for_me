@@ -1,0 +1,2 @@
+clear; dune build; dune exec .\src\main.exe
+
