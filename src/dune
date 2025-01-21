@@ -1,4 +1,6 @@
 (executable 
  (name main)
- (libraries num)
- (modules utilities main))
+ (libraries num bitv)
+ (modules utilities main)
+ (flags (:standard -w -27)))
+ 

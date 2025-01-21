@@ -1,3 +1,7 @@
+let xor a b =
+  (a || b) && not (a && b)
+;;
+
 let read_file_T name = 
   let n = ref (Big_int.big_int_of_int 0) in
   let b = ref 0 in
@@ -24,7 +28,7 @@ let read_file_T name =
                               let rec aux liste =
                                 match liste with
                                 | [] -> []
-                                | e :: ll -> [int_of_string e] :: (aux ll)
+                                | e :: ll -> int_of_string e :: (aux ll)
                               in
                               let liste = match (String.split_on_char ' ' r) with | [] -> [] | _ :: ll -> ll in
                               tab:= (big, (aux liste)) :: !tab 
@@ -37,4 +41,73 @@ let read_file_T name =
     | e -> raise e
   in
   (!n, !b, !tab)
+;;
+
+let create_Z_idx_hashtbl_from_tab_T tab =
+  let res = Hashtbl.create 128 in
+  let inter = ref [] in 
+  List.iter 
+  (
+    fun (big , facteurs_list) ->
+      begin
+        List.iter 
+        (
+          fun value -> 
+            if (List.mem value !inter) then 
+              () 
+            else
+              inter := value :: !inter
+        )
+        facteurs_list
+      end
+  )
+  tab;
+  inter := List.sort Int.compare !inter;
+  let idx = ref 0 in 
+  List.iter (fun value -> Hashtbl.replace res value !idx; idx:=(!idx)+1) !inter;
+  (!idx, res)
+;;
+
+let pivot_gausse z =
+  failwith "todo"
+;;
+
+let get_matrice_Z_from_list_T list =
+  let (size, idxHash) = create_Z_idx_hashtbl_from_tab_T list in
+  let resBig = ref [] in
+  let resVector = ref [] in 
+  List.iter 
+  (
+    fun (big , facteurs_list) ->
+      let vector = 
+        let v = Bitv.create size false in 
+        List.iter 
+        (
+          fun value ->
+            let nth = Hashtbl.find idxHash value in
+            Bitv.set v nth (xor (Bitv.get v nth) true) 
+        ) 
+        facteurs_list;
+        v
+      in
+      resBig := big :: !resBig;
+      resVector := vector :: !resVector;
+  )
+  list;
+  (!resBig, !resVector)
+;;
+
+let print_matrice tab =
+  let (bigList, vectorList) = get_matrice_Z_from_list_T tab in
+  List.iteri 
+    (
+      fun i b -> 
+        begin
+          Printf.printf "%s : " (Big_int.string_of_big_int b);
+          let v = (List.nth vectorList i) in 
+          Bitv.iter (fun b -> if b then Printf.printf "1 " else Printf.printf"0 ") v ;
+          Printf.printf "\n"
+        end
+    ) 
+    bigList
 ;;
