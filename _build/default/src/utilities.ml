@@ -65,15 +65,31 @@ let create_Z_idx_hashtbl_from_tab_T tab =
   inter := List.sort Int.compare !inter;
   let idx = ref 0 in 
   List.iter (fun value -> Hashtbl.replace res value !idx; idx:=(!idx)+1) !inter;
-  (!idx, res)
+  (!idx, !inter, res)
 ;;
 
-let pivot_gausse z =
-  failwith "todo"
+let remove_doublons_X_vector bigList vectorList =
+  let rec reduction_doublon bigList vectorList acc =
+    match bigList, vectorList with
+    | big :: l1, v :: l2 -> 
+      if (List.mem v acc) then 
+        reduction_doublon l1 l2 acc
+      else
+        let bb, vv = (reduction_doublon l1 l2 (v::acc)) in 
+        (big :: bb, v :: vv) 
+    | [], [] -> ([], [])
+    | _ -> failwith ("bigList and vectorList somehow don't have the same size")
+  in
+  reduction_doublon bigList vectorList []
+;;
+
+let pivot_gausse bigList vectorList =
+  let bL_reduced, vL_reduced = remove_doublons_X_vector bigList vectorList in 
+  (bL_reduced, vL_reduced)
 ;;
 
 let get_matrice_Z_from_list_T list =
-  let (size, idxHash) = create_Z_idx_hashtbl_from_tab_T list in
+  let (size, idxvalues, idxHash) = create_Z_idx_hashtbl_from_tab_T list in
   let resBig = ref [] in
   let resVector = ref [] in 
   List.iter 
@@ -94,20 +110,34 @@ let get_matrice_Z_from_list_T list =
       resVector := vector :: !resVector;
   )
   list;
-  (!resBig, !resVector)
+  (!resBig, idxvalues, !resVector)
 ;;
 
+(*Affichage du resultat de la fonction 'get_matrice_Z_from_list_T list'*)
 let print_matrice tab =
-  let (bigList, vectorList) = get_matrice_Z_from_list_T tab in
-  List.iteri 
-    (
-      fun i b -> 
-        begin
-          Printf.printf "%s : " (Big_int.string_of_big_int b);
-          let v = (List.nth vectorList i) in 
-          Bitv.iter (fun b -> if b then Printf.printf "1 " else Printf.printf"0 ") v ;
-          Printf.printf "\n"
-        end
-    ) 
-    bigList
+  let (bigList, idxvalues, vectorList) = get_matrice_Z_from_list_T tab in
+  let affichage bigList vectorList =
+    List.iteri 
+      (
+        fun i b -> 
+          begin
+            Printf.printf "%s : " (Big_int.string_of_big_int b);
+            let v = (List.nth vectorList i) in 
+            Bitv.iter (fun b -> if b then Printf.printf "1 " else Printf.printf"0 ") v ;
+            Printf.printf "\n"
+          end
+      ) 
+    bigList;
+  in 
+  List.iter (fun i -> Printf.printf "%d " i) idxvalues;
+  Printf.printf "\n\n";
+  affichage bigList vectorList;
+  Printf.printf "\nResultat apres supression des doublons :\n";
+  let bL_reduced, vL_reduced = remove_doublons_X_vector bigList vectorList in
+  affichage bL_reduced vL_reduced
+;;
+
+let resolution_from_file_T n b tab =
+  (*let (bigList, vectorList) = get_matrice_Z_from_list_T tab in*)
+  failwith "pivot todo"
 ;;
