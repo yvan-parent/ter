@@ -1,2 +1,5 @@
 clear; dune build; dune exec .\src\main.exe
 
+git add .
+git commit -m " "
+git push
