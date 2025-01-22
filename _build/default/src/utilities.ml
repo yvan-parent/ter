@@ -83,9 +83,91 @@ let remove_doublons_X_vector bigList vectorList =
   reduction_doublon bigList vectorList []
 ;;
 
-let pivot_gausse bigList vectorList =
-  let bL_reduced, vL_reduced = remove_doublons_X_vector bigList vectorList in 
-  (bL_reduced, vL_reduced)
+let affiche_matrice m =
+  List.iter
+  (
+    fun v -> 
+      Bitv.iter (fun b -> let s = if b then "1 " else "0 " in Printf.printf "%s" s) v;
+      Printf.printf "\n"
+  )
+  m
+;;
+
+let pivot_gauss bigList z cols rows =
+  let t = 
+    let resT = ref [] in
+    let i = ref (rows-1) in
+    while (!i)>=0 do
+      let v = Bitv.create rows false in 
+      Bitv.set v !i true;
+      resT := v :: !resT;
+      i:=!i-1
+    done;
+    !resT
+  in
+  Printf.printf "Tailles : %d, %d\n" cols rows;
+  (*algo de gauss*)
+  Printf.printf "\nAffichage base : \n";
+    affiche_matrice z;
+    Printf.printf "\n";
+    affiche_matrice t;
+  let already_used = ref [] in
+  for j=0 to min (rows - 1) (cols - 1) do 
+    (*trouver un pivot*)
+    let p = ref (-1) in 
+
+    let truth = ref true in
+    let () =
+      for k = 0 to (rows - 1) do 
+        if (!truth) then
+          begin
+            if not (List.mem k !already_used) then begin
+              let v = List.nth z k in
+              let () =
+                if Bitv.get v j then begin
+                  already_used := k :: !already_used;
+                  p := k;
+                  truth := false;
+                end else
+                  ()
+              in
+              ()
+            end
+          end
+      done
+    in
+    
+    if (!p>=0) then begin
+
+      (*apply modifications*)
+      for k = 0 to (rows - 1) do 
+        if (k = !p) then 
+          () 
+        else begin
+          let nthV = List.nth z k in
+          let currB = Bitv.get nthV j in
+          if currB then begin
+            let nthVk = List.nth t k in 
+            Bitv.iteri (fun i b -> 
+              Bitv.set nthV i (xor b (Bitv.get nthV i))
+            ) (List.nth z !p);
+            Bitv.iteri (fun i b -> 
+              Bitv.set nthVk i (xor b (Bitv.get nthVk i))
+            ) (List.nth t !p)
+          end else ()
+        end
+      done
+
+    end;
+  
+
+    Printf.printf "\nAffichage inter : \n";
+    affiche_matrice z;
+    Printf.printf "\n";
+    affiche_matrice t;
+
+  done;
+  (z, t)
 ;;
 
 let get_matrice_Z_from_list_T list =
@@ -114,7 +196,7 @@ let get_matrice_Z_from_list_T list =
 ;;
 
 (*Affichage du resultat de la fonction 'get_matrice_Z_from_list_T list'*)
-let print_matrice tab =
+let test_get_matrice_Z_from_list_T tab =
   let (bigList, idxvalues, vectorList) = get_matrice_Z_from_list_T tab in
   let affichage bigList vectorList =
     List.iteri 
@@ -128,7 +210,8 @@ let print_matrice tab =
           end
       ) 
     bigList;
-  in 
+  in
+  Printf.printf "\n"; 
   List.iter (fun i -> Printf.printf "%d " i) idxvalues;
   Printf.printf "\n\n";
   affichage bigList vectorList;
@@ -138,6 +221,11 @@ let print_matrice tab =
 ;;
 
 let resolution_from_file_T n b tab =
-  (*let (bigList, vectorList) = get_matrice_Z_from_list_T tab in*)
-  failwith "pivot todo"
+  let (bigList, idxvalues, vectorList) = get_matrice_Z_from_list_T tab in
+  let (bigList, vectorList) = remove_doublons_X_vector bigList vectorList in
+  let (z,v) = pivot_gauss bigList vectorList (List.length idxvalues) (List.length vectorList) in
+  Printf.printf "\nAffichage : \n";
+  affiche_matrice z;
+  Printf.printf "\n";
+  affiche_matrice v;
 ;;
