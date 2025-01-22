@@ -23,6 +23,7 @@ let read_file_T name =
           let split = String.split_on_char ':' line in 
           match split with
           | l :: r :: [] -> 
+            (*remplacer par un List.map*)
                             begin
                               let big = Big_int.big_int_of_string l in 
                               let rec aux liste =
@@ -105,21 +106,25 @@ let pivot_gauss bigList z cols rows =
     done;
     !resT
   in
-  Printf.printf "Tailles : %d, %d\n" cols rows;
+
   (*algo de gauss*)
+
+  (*
   Printf.printf "\nAffichage base : \n";
     affiche_matrice z;
     Printf.printf "\n";
     affiche_matrice t;
+    *)
+
   let already_used = ref [] in
   for j=0 to min (rows - 1) (cols - 1) do 
     (*trouver un pivot*)
     let p = ref (-1) in 
 
-    let truth = ref true in
+    let continue = ref true in
     let () =
       for k = 0 to (rows - 1) do 
-        if (!truth) then
+        if (!continue) then
           begin
             if not (List.mem k !already_used) then begin
               let v = List.nth z k in
@@ -127,7 +132,7 @@ let pivot_gauss bigList z cols rows =
                 if Bitv.get v j then begin
                   already_used := k :: !already_used;
                   p := k;
-                  truth := false;
+                  continue := false;
                 end else
                   ()
               in
@@ -138,7 +143,6 @@ let pivot_gauss bigList z cols rows =
     in
     
     if (!p>=0) then begin
-
       (*apply modifications*)
       for k = 0 to (rows - 1) do 
         if (k = !p) then 
@@ -159,15 +163,18 @@ let pivot_gauss bigList z cols rows =
       done
 
     end;
-  
 
-    Printf.printf "\nAffichage inter : \n";
-    affiche_matrice z;
-    Printf.printf "\n";
-    affiche_matrice t;
+    (*Check if a line of Z is full of 0 -> if yes then result is tab of idx of "1" in the matching row of T*) 
 
   done;
-  (z, t)
+  
+  Printf.printf "\nEtat des matrices Z et T à la toute fin du Pivot de Gauss: \n";
+  affiche_matrice z;
+  Printf.printf "\n";
+  affiche_matrice t;
+
+  (*analyse du resultat et return*)
+  0 :: 1 :: 2 :: 3 :: []
 ;;
 
 let get_matrice_Z_from_list_T list =
@@ -222,10 +229,31 @@ let test_get_matrice_Z_from_list_T tab =
 
 let resolution_from_file_T n b tab =
   let (bigList, idxvalues, vectorList) = get_matrice_Z_from_list_T tab in
-  let (bigList, vectorList) = remove_doublons_X_vector bigList vectorList in
-  let (z,v) = pivot_gauss bigList vectorList (List.length idxvalues) (List.length vectorList) in
-  Printf.printf "\nAffichage : \n";
-  affiche_matrice z;
-  Printf.printf "\n";
-  affiche_matrice v;
+  let (bigList, vectorList) = remove_doublons_X_vector bigList vectorList in (*Maybe not needed, can keep doublons (but needs testing)*)
+  let (indices) = pivot_gauss bigList vectorList (List.length idxvalues) (List.length vectorList) in
+
+  let x = ref (Big_int.unit_big_int) in 
+  let y = ref (Big_int.unit_big_int) in
+  let yListNumbers = ref [] in 
+  
+  (*let action_at_indice = Bitv.create (List.length idxvalues) true in*)
+
+  List.iter 
+  (fun i -> 
+    let currBig = (List.nth bigList i) in
+    x:= Big_int.mult_big_int (!x) currBig;
+    
+    yListNumbers:= (
+      List.find (fun (b,l) -> Big_int.eq_big_int b currBig) tab 
+    ) :: !yListNumbers
+  ) 
+  indices;
+  x:= Big_int.mod_big_int (!x) n;
+  (*Pour Y, on va multiplier 1 element sur 2 pour éviter de refaire un sqrt après*)
+  
+  
+  y:= Big_int.sqrt_big_int (!y);
+
+  Printf.printf "\nX -> %s\n" (Big_int.string_of_big_int (!x));
+  Printf.printf "Y -> %s\n" (Big_int.string_of_big_int (!y))  
 ;;
