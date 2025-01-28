@@ -115,66 +115,72 @@ let pivot_gauss bigList z cols rows =
     Printf.printf "\n";
     affiche_matrice t;
     *)
+  let keep_gaussing = ref true in 
+  let res = ref [] in
 
   let already_used = ref [] in
   for j=0 to min (rows - 1) (cols - 1) do 
-    (*trouver un pivot*)
-    let p = ref (-1) in 
+    if !keep_gaussing then
+    (
+      (*find a pivot*)
+      let p = ref (-1) in 
 
-    let continue = ref true in
-    let () =
-      for k = 0 to (rows - 1) do 
-        if (!continue) then
-          begin
-            if not (List.mem k !already_used) then begin
-              let v = List.nth z k in
-              let () =
+      let continue = ref true in
+      let () =
+        for k = 0 to (rows - 1) do 
+          if (!continue) then
+
+            begin
+              if not (List.mem k !already_used) then begin
+                let v = List.nth z k in
                 if Bitv.get v j then begin
-                  already_used := k :: !already_used;
-                  p := k;
-                  continue := false;
-                end else
-                  ()
-              in
-              ()
+                    already_used := k :: !already_used;
+                    p := k;
+                    continue := false;
+                  end
+              end
             end
+
+        done
+      in
+      
+      if (!p>=0) then begin
+        (*apply modifications*)
+        for k = 0 to (rows - 1) do 
+          if (k = !p) then 
+            () 
+          else begin
+            let nthV = List.nth z k in
+            let currB = Bitv.get nthV j in
+            if currB then begin
+              let nthVk = List.nth t k in 
+              Bitv.iteri (fun i b -> 
+                Bitv.set nthV i (xor b (Bitv.get nthV i))
+              ) (List.nth z !p);
+              Bitv.iteri (fun i b -> 
+                Bitv.set nthVk i (xor b (Bitv.get nthVk i))
+              ) (List.nth t !p)
+            end else ()
           end
-      done
-    in
-    
-    if (!p>=0) then begin
-      (*apply modifications*)
-      for k = 0 to (rows - 1) do 
-        if (k = !p) then 
-          () 
-        else begin
-          let nthV = List.nth z k in
-          let currB = Bitv.get nthV j in
-          if currB then begin
-            let nthVk = List.nth t k in 
-            Bitv.iteri (fun i b -> 
-              Bitv.set nthV i (xor b (Bitv.get nthV i))
-            ) (List.nth z !p);
-            Bitv.iteri (fun i b -> 
-              Bitv.set nthVk i (xor b (Bitv.get nthVk i))
-            ) (List.nth t !p)
-          end else ()
-        end
-      done
+        done
 
-    end;
+      end;
 
-    (*Check if a line of Z is full of 0 -> if yes then result is tab of idx of "1" in the matching row of T*) 
+      (*Check if a line of Z is full of 0 -> if yes then result is tab of idx of "1" in the matching row of T*)
+        List.iteri (fun i v -> 
+          if (!keep_gaussing) then 
+            let is_answer = Bitv.fold_left (fun acc b -> (not b) && acc) true v in 
+            if (is_answer) then 
+              begin
+                keep_gaussing:=false;
+                let t_vec = List.nth t i in 
+                Bitv.iteri (fun idx b-> if b then res:= !res@[idx]) t_vec
+              end
+        ) z
+    )
 
   done;
-  
-  Printf.printf "\nEtat des matrices Z et T à la toute fin du Pivot de Gauss: \n";
-  affiche_matrice z;
-  Printf.printf "\n";
-  affiche_matrice t;
-
-  (*analyse du resultat et return*)
-  0 :: 1 :: 2 :: 3 :: []
+  !res
 ;;
 
 let get_matrice_Z_from_list_T list =
@@ -218,42 +224,53 @@ let test_get_matrice_Z_from_list_T tab =
       ) 
     bigList;
   in
-  Printf.printf "\n"; 
-  List.iter (fun i -> Printf.printf "%d " i) idxvalues;
-  Printf.printf "\n\n";
-  affichage bigList vectorList;
-  Printf.printf "\nResultat apres supression des doublons :\n";
   let bL_reduced, vL_reduced = remove_doublons_X_vector bigList vectorList in
   affichage bL_reduced vL_reduced
 ;;
 
+let gcd_answer n x y =
+  let gcd a b =
+    Big_int.gcd_big_int a b
+  in
+  gcd (Big_int.sub_big_int x y) n
+;;
+
 let resolution_from_file_T n b tab =
   let (bigList, idxvalues, vectorList) = get_matrice_Z_from_list_T tab in
-  let (bigList, vectorList) = remove_doublons_X_vector bigList vectorList in (*Maybe not needed, can keep doublons (but needs testing)*)
-  let (indices) = pivot_gauss bigList vectorList (List.length idxvalues) (List.length vectorList) in
+  let idxvaluesLen = List.length idxvalues in
+  (*let (bigList, vectorList) = remove_doublons_X_vector bigList vectorList in*) (*Maybe not needed, can keep doublons (but needs testing)*)
+  let (indices) = pivot_gauss bigList vectorList (idxvaluesLen) (List.length vectorList) in
 
   let x = ref (Big_int.unit_big_int) in 
-  let y = ref (Big_int.unit_big_int) in
-  let yListNumbers = ref [] in 
-  
+  let y = ref (Big_int.unit_big_int) in  
   (*let action_at_indice = Bitv.create (List.length idxvalues) true in*)
-
+  let hash_num_occurence = Hashtbl.create idxvaluesLen in
   List.iter 
   (fun i -> 
     let currBig = (List.nth bigList i) in
     x:= Big_int.mult_big_int (!x) currBig;
     
-    yListNumbers:= (
+    (*adding y numbers (only one copy of each double X to avoid doing a sqrt after)*)
+    let (_, tab_elem) =
       List.find (fun (b,l) -> Big_int.eq_big_int b currBig) tab 
-    ) :: !yListNumbers
+    in
+    List.iter (fun idx -> 
+      match Hashtbl.find_opt hash_num_occurence idx with
+      | None ->  y:= (Big_int.mult_int_big_int idx !y); Hashtbl.replace hash_num_occurence idx ()
+      | Some _ -> Hashtbl.remove hash_num_occurence idx
+      ) tab_elem
   ) 
   indices;
   x:= Big_int.mod_big_int (!x) n;
-  (*Pour Y, on va multiplier 1 element sur 2 pour éviter de refaire un sqrt après*)
-  
-  
-  y:= Big_int.sqrt_big_int (!y);
+  y:= Big_int.mod_big_int (!y) n;
 
-  Printf.printf "\nX -> %s\n" (Big_int.string_of_big_int (!x));
-  Printf.printf "Y -> %s\n" (Big_int.string_of_big_int (!y))  
+  
+  Printf.printf "X -> %s\n" (Big_int.string_of_big_int (!x));
+  Printf.printf "Y -> %s\n" (Big_int.string_of_big_int (!y));
+  
+
+  (* using GCD to find an answer *)
+
+  let gcd = gcd_answer n !x !y in 
+  Printf.printf "%s = %s * %s\n" (Big_int.string_of_big_int n) (Big_int.string_of_big_int (Big_int.div_big_int n gcd)) (Big_int.string_of_big_int gcd) 
 ;;
