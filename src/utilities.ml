@@ -23,16 +23,14 @@ let read_file_T name =
           let split = String.split_on_char ':' line in 
           match split with
           | l :: r :: [] -> 
-            (*remplacer par un List.map*)
                             begin
-                              let big = Big_int.big_int_of_string l in 
-                              let rec aux liste =
-                                match liste with
+                              let big = Big_int.big_int_of_string l in
+                              let num_list = 
+                                match String.split_on_char ' ' r with
                                 | [] -> []
-                                | e :: ll -> int_of_string e :: (aux ll)
+                                | _ :: ll -> List.map int_of_string ll
                               in
-                              let num_list = match (String.split_on_char ' ' r) with | [] -> [] | _ :: ll -> ll in
-                              tab:= (big, (aux num_list)) :: !tab 
+                              tab := (big, num_list) :: !tab
                             end
           | _ -> failwith "Line of the file not built correctly"
         done
@@ -69,20 +67,6 @@ let create_Z_idx_hashtbl_from_tab_T tab =
   (!idx, !inter, res)
 ;;
 
-let remove_doublons_X_vector bigList vectorList =
-  let rec reduction_doublon bigList vectorList acc =
-    match bigList, vectorList with
-    | big :: l1, v :: l2 -> 
-      if (List.mem v acc) then 
-        reduction_doublon l1 l2 acc
-      else
-        let bb, vv = (reduction_doublon l1 l2 (v::acc)) in 
-        (big :: bb, v :: vv) 
-    | [], [] -> ([], [])
-    | _ -> failwith ("bigList and vectorList somehow don't have the same size")
-  in
-  reduction_doublon bigList vectorList []
-;;
 
 let affiche_matrice m =
   List.iter
@@ -116,7 +100,6 @@ let pivot_gauss bigList z cols rows =
     affiche_matrice t;
     *)
   let keep_gaussing = ref true in 
-  let res = ref [] in
 
   let already_used = ref [] in
   for j=0 to min (rows - 1) (cols - 1) do 
@@ -165,22 +148,9 @@ let pivot_gauss bigList z cols rows =
         done
 
       end;
-
-      (*Check if a line of Z is full of 0 -> if yes then result is tab of idx of "1" in the matching row of T*)
-        List.iteri (fun i v -> 
-          if (!keep_gaussing) then 
-            let is_answer = Bitv.fold_left (fun acc b -> (not b) && acc) true v in 
-            if (is_answer) then 
-              begin
-                keep_gaussing:=false;
-                let t_vec = List.nth t i in 
-                Bitv.iteri (fun idx b-> if b then res:= !res@[idx]) t_vec
-              end
-        ) z
     )
-
   done;
-  !res
+  (z, t)
 ;;
 
 let get_matrice_Z_from_list_T list =
@@ -208,26 +178,6 @@ let get_matrice_Z_from_list_T list =
   (!resBig, idxvalues, !resVector)
 ;;
 
-(*Affichage du resultat de la fonction 'get_matrice_Z_from_list_T list'*)
-let test_get_matrice_Z_from_list_T tab =
-  let (bigList, idxvalues, vectorList) = get_matrice_Z_from_list_T tab in
-  let affichage bigList vectorList =
-    List.iteri 
-      (
-        fun i b -> 
-          begin
-            Printf.printf "%s : " (Big_int.string_of_big_int b);
-            let v = (List.nth vectorList i) in 
-            Bitv.iter (fun b -> if b then Printf.printf "1 " else Printf.printf"0 ") v ;
-            Printf.printf "\n"
-          end
-      ) 
-    bigList;
-  in
-  let bL_reduced, vL_reduced = remove_doublons_X_vector bigList vectorList in
-  affichage bL_reduced vL_reduced
-;;
-
 let gcd_answer n x y =
   let gcd a b =
     Big_int.gcd_big_int a b
@@ -238,39 +188,64 @@ let gcd_answer n x y =
 let resolution_from_file_T n b tab =
   let (bigList, idxvalues, vectorList) = get_matrice_Z_from_list_T tab in
   let idxvaluesLen = List.length idxvalues in
-  (*let (bigList, vectorList) = remove_doublons_X_vector bigList vectorList in*) (*Maybe not needed, can keep doublons (but needs testing)*)
-  let (indices) = pivot_gauss bigList vectorList (idxvaluesLen) (List.length vectorList) in
+  let vectorListLen = List.length vectorList in
+  let (z, t) = pivot_gauss bigList vectorList (idxvaluesLen) (vectorListLen) in
 
   let x = ref (Big_int.unit_big_int) in 
   let y = ref (Big_int.unit_big_int) in  
-  (*let action_at_indice = Bitv.create (List.length idxvalues) true in*)
-  let hash_num_occurence = Hashtbl.create idxvaluesLen in
-  List.iter 
-  (fun i -> 
-    let currBig = (List.nth bigList i) in
-    x:= Big_int.mult_big_int (!x) currBig;
-    
-    (*adding y numbers (only one copy of each double X to avoid doing a sqrt after)*)
-    let (_, tab_elem) =
-      List.find (fun (b,l) -> Big_int.eq_big_int b currBig) tab 
-    in
-    List.iter (fun idx -> 
-      match Hashtbl.find_opt hash_num_occurence idx with
-      | None ->  y:= (Big_int.mult_int_big_int idx !y); Hashtbl.replace hash_num_occurence idx ()
-      | Some _ -> Hashtbl.remove hash_num_occurence idx
-      ) tab_elem
-  ) 
-  indices;
-  x:= Big_int.mod_big_int (!x) n;
-  y:= Big_int.mod_big_int (!y) n;
+  
+  (* Check for lines in z full of 0*)
+  let check_for_fullZero_line_solution z t =
 
-  
-  Printf.printf "X -> %s\n" (Big_int.string_of_big_int (!x));
-  Printf.printf "Y -> %s\n" (Big_int.string_of_big_int (!y));
-  
+    let indices_to_x_y indices =
+      let hash_num_occurence = Hashtbl.create idxvaluesLen in
+      List.iter 
+      (fun i -> 
+        let currBig = (List.nth bigList i) in
+        x:= Big_int.mult_big_int (!x) currBig;
+        (*adding y numbers (only one copy of each double X to avoid doing a sqrt after)*)
+        let (_, tab_elem) =
+          List.find (fun (b,l) -> Big_int.eq_big_int b currBig) tab 
+        in
+        List.iter (fun idx -> 
+          match Hashtbl.find_opt hash_num_occurence idx with
+          | None ->  y:= (Big_int.mult_int_big_int idx !y); Hashtbl.replace hash_num_occurence idx ()
+          | Some _ -> Hashtbl.remove hash_num_occurence idx
+          ) tab_elem
+      ) 
+      indices;
+      x:= Big_int.mod_big_int (!x) n;
+      y:= Big_int.mod_big_int (!y) n
+    in
+
+    let rec aux line =
+      if line>=vectorListLen then None 
+      else
+        begin
+          let res = ref [] in
+          let current_vec = List.nth z line in  
+          let is_answer = Bitv.fold_left (fun acc b -> (not b) && acc) true current_vec in 
+          if (is_answer) then
+            let t_vec = List.nth t line in 
+            Bitv.iteri (fun idx b-> if b then res:= !res@[idx]) t_vec;
+            indices_to_x_y (!res);
+            (*if gcd isn't 1 then answer*)
+            let gcd_answer_var = (gcd_answer n !x !y) in
+            if (Big_int.eq_big_int gcd_answer_var (Big_int.unit_big_int)) then
+                aux (line+1)
+            else 
+              Some gcd_answer_var
+          else
+            aux (line+1)
+        end
+    in
+    aux 0
+  in
 
   (* using GCD to find an answer *)
 
-  let gcd = gcd_answer n !x !y in 
-  Printf.printf "%s = %s * %s\n" (Big_int.string_of_big_int n) (Big_int.string_of_big_int (Big_int.div_big_int n gcd)) (Big_int.string_of_big_int gcd) 
+  match (check_for_fullZero_line_solution z t) with
+  | None -> failwith "shouldn't happen (end of resultion)"
+  | Some gcd ->
+      Printf.printf "%s = %s * %s\n" (Big_int.string_of_big_int n) (Big_int.string_of_big_int (Big_int.div_big_int n gcd)) (Big_int.string_of_big_int gcd) 
 ;;
