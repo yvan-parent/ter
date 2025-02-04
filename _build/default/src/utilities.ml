@@ -186,10 +186,17 @@ let gcd_answer n x y =
 ;;
 
 let resolution_from_file_T n b tab =
+  let pre_time = Unix.gettimeofday () in
   let (bigList, idxvalues, vectorList) = get_matrice_Z_from_list_T tab in
+  let post_time = Unix.gettimeofday () in 
+  Printf.printf "Running time of get_matrice_Z_from_list_T : %f\n" (post_time-.pre_time);
+
   let idxvaluesLen = List.length idxvalues in
   let vectorListLen = List.length vectorList in
+  let pre_time = Unix.gettimeofday () in
   let (z, t) = pivot_gauss bigList vectorList (idxvaluesLen) (vectorListLen) in
+  let post_time = Unix.gettimeofday () in 
+  Printf.printf "Running time of Gauss : %f\n" (post_time-.pre_time);
 
   let x = ref (Big_int.unit_big_int) in 
   let y = ref (Big_int.unit_big_int) in  
@@ -244,8 +251,11 @@ let resolution_from_file_T n b tab =
 
   (* using GCD to find an answer *)
 
+  let pre_time = Unix.gettimeofday () in
   match (check_for_fullZero_line_solution z t) with
   | None -> failwith "shouldn't happen (end of resultion)"
   | Some gcd ->
-      Printf.printf "%s = %s * %s\n" (Big_int.string_of_big_int n) (Big_int.string_of_big_int (Big_int.div_big_int n gcd)) (Big_int.string_of_big_int gcd) 
+      Printf.printf "%s = %s * %s\n" (Big_int.string_of_big_int n) (Big_int.string_of_big_int (Big_int.div_big_int n gcd)) (Big_int.string_of_big_int gcd);
+  let post_time = Unix.gettimeofday () in 
+  Printf.printf "Running time of Solution+GCD : %f\n" (post_time-.pre_time);
 ;;

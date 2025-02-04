@@ -1,9 +1,9 @@
-# C:\OCaml64\home\yvanp\.opam\4.14.0+mingw64c\bin\dune.exe exec ./src/main.exe
+# C:\OCaml64\home\yvanp\.opam\prog2\bin\dune.exe exec ./src/main.exe
 # OCAMLPARAM: unset
 # Shared cache: disabled
 # Workspace root: "C:\\OCaml64\\home\\yvanp\\quadratic_sieve"
 # Auto-detected concurrency: 8
-$ C:\OCaml64\home\yvanp\.opam\4.14.0+mingw64c\bin\ocamlc.opt.exe -config > C:\OCaml64\tmp\dune_2f5768_output
+$ C:\OCaml64\home\yvanp\.opam\prog2\bin\ocamlc.opt.exe -config > C:\OCaml64\tmp\dune_ffcd11_output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
@@ -13,34 +13,29 @@ $ C:\OCaml64\home\yvanp\.opam\4.14.0+mingw64c\bin\ocamlc.opt.exe -config > C:\OC
 #  ; fdo_target_exe = None
 #  ; build_dir = "default"
 #  ; toplevel_path =
-#      Some External "C:/OCaml64/home/yvanp/.opam/4.14.0+mingw64c/lib/toplevel"
-#  ; ocaml_bin =
-#      External "C:\\OCaml64\\home\\yvanp\\.opam\\4.14.0+mingw64c\\bin"
+#      Some External "C:/OCaml64/home/yvanp/.opam/prog2/lib/toplevel"
+#  ; ocaml_bin = External "C:\\OCaml64\\home\\yvanp\\.opam\\prog2\\bin"
 #  ; ocaml =
-#      Ok
-#        External
-#          "C:\\OCaml64\\home\\yvanp\\.opam\\4.14.0+mingw64c\\bin\\ocaml.exe"
+#      Ok External "C:\\OCaml64\\home\\yvanp\\.opam\\prog2\\bin\\ocaml.exe"
 #  ; ocamlc =
-#      External
-#        "C:\\OCaml64\\home\\yvanp\\.opam\\4.14.0+mingw64c\\bin\\ocamlc.opt.exe"
+#      External "C:\\OCaml64\\home\\yvanp\\.opam\\prog2\\bin\\ocamlc.opt.exe"
 #  ; ocamlopt =
 #      Ok
 #        External
-#          "C:\\OCaml64\\home\\yvanp\\.opam\\4.14.0+mingw64c\\bin\\ocamlopt.opt.exe"
+#          "C:\\OCaml64\\home\\yvanp\\.opam\\prog2\\bin\\ocamlopt.opt.exe"
 #  ; ocamldep =
 #      Ok
 #        External
-#          "C:\\OCaml64\\home\\yvanp\\.opam\\4.14.0+mingw64c\\bin\\ocamldep.opt.exe"
+#          "C:\\OCaml64\\home\\yvanp\\.opam\\prog2\\bin\\ocamldep.opt.exe"
 #  ; ocamlmklib =
 #      Ok
 #        External
-#          "C:\\OCaml64\\home\\yvanp\\.opam\\4.14.0+mingw64c\\bin\\ocamlmklib.opt.exe"
+#          "C:\\OCaml64\\home\\yvanp\\.opam\\prog2\\bin\\ocamlmklib.opt.exe"
 #  ; env =
 #      map
 #        { "DUNE_OCAML_HARDCODED" :
-#            "C:\\\\OCaml64\\\\home\\\\yvanp\\\\.opam\\\\4.14.0+mingw64c\\lib"
-#        ; "DUNE_OCAML_STDLIB" :
-#            "C:/OCaml64/home/yvanp/.opam/4.14.0+mingw64c/lib/ocaml"
+#            "C:\\\\OCaml64\\\\home\\\\yvanp\\\\.opam\\\\prog2\\lib"
+#        ; "DUNE_OCAML_STDLIB" : "C:/OCaml64/home/yvanp/.opam/prog2/lib/ocaml"
 #        ; "DUNE_SOURCEROOT" : "C:\\OCaml64\\home\\yvanp\\quadratic_sieve"
 #        ; "INSIDE_DUNE" :
 #            "C:\\OCaml64\\home\\yvanp\\quadratic_sieve\\_build/default"
@@ -56,9 +51,7 @@ $ C:\OCaml64\home\yvanp\.opam\4.14.0+mingw64c\bin\ocamlc.opt.exe -config > C:\OC
 #        ; "OPAMCOLOR" : "always"
 #        }
 #  ; findlib_paths =
-#      [ External
-#          "C:\\\\OCaml64\\\\home\\\\yvanp\\\\.opam\\\\4.14.0+mingw64c\\lib"
-#      ]
+#      [ External "C:\\\\OCaml64\\\\home\\\\yvanp\\\\.opam\\\\prog2\\lib" ]
 #  ; arch_sixtyfour = true
 #  ; natdynlink_supported = true
 #  ; supports_shared_libraries = true
@@ -66,8 +59,7 @@ $ C:\OCaml64\home\yvanp\.opam\4.14.0+mingw64c\bin\ocamlc.opt.exe -config > C:\OC
 #      { version = "4.14.0"
 #      ; standard_library_default =
 #          "C:/cygwin/home/appveyor/.opam/4.14.0+mingw64c/lib/ocaml"
-#      ; standard_library =
-#          "C:/OCaml64/home/yvanp/.opam/4.14.0+mingw64c/lib/ocaml"
+#      ; standard_library = "C:/OCaml64/home/yvanp/.opam/prog2/lib/ocaml"
 #      ; standard_runtime = "the_standard_runtime_variable_was_deleted"
 #      ; ccomp_type = "cc"
 #      ; c_compiler = "x86_64-w64-mingw32-gcc"
