@@ -2,10 +2,17 @@ let xor a b =
   (a || b) && not (a && b)
 ;;
 
+let print_matrix m = 
+  Array.iter (fun vect -> Bitv.iter (fun b -> let s = if b then "1 " else "0 " in Printf.printf "%s" s) vect; Printf.printf "\n") m
+;;
+
 let read_file_T name = 
   let n = ref (Big_int.big_int_of_int 0) in
   let b = ref 0 in
   let tab = ref [] in
+  let different_factors_list = ref [||] in
+  let amount_different_factors = ref 0 in
+  
   let () =
     try
       let channel = open_in name in
@@ -28,7 +35,16 @@ let read_file_T name =
                               let num_list = 
                                 match String.split_on_char ' ' r with
                                 | [] -> []
-                                | _ :: ll -> List.map int_of_string ll
+                                | _ :: ll -> List.map (  
+                                  fun s ->
+                                    let i = int_of_string s in  
+                                        if (Array.mem i !different_factors_list) then i
+                                        else (
+                                            different_factors_list := Array.append !different_factors_list [|i|];
+                                            amount_different_factors:=!amount_different_factors+1;
+                                            i
+                                            )
+                                    ) ll
                               in
                               tab := (big, num_list) :: !tab
                             end
@@ -39,7 +55,10 @@ let read_file_T name =
     | Sys_error msg -> failwith ("File could not be opened: " ^ msg)
     | e -> raise e
   in
-  (!n, !b, !tab)
+  let idxHash = Hashtbl.create 128 in
+  let idx = ref 0 in
+  Array.iter (fun value -> Hashtbl.replace idxHash value !idx; idx:=(!idx)+1) !different_factors_list;
+  (!n, !b, !tab, !amount_different_factors, Array.sort Int.compare !different_factors_list, idxHash)
 ;;
 
 let create_Z_idx_hashtbl_from_tab_T tab =
@@ -78,8 +97,61 @@ let affiche_matrice m =
   m
 ;;
 
+let new_gauss z bigNumbers rows cols = 
+  let swap_rows bigNums z t i j =
+    let temp1 = z.(i) in 
+    z.(i) <- z.(j);
+    z.(j) <- temp1;
+    let temp2 = t.(i) in 
+    t.(i) <- t.(j);
+    t.(j) <- temp2;
+    let temp3 = bigNums.(i) in 
+    bigNums.(i) <- bigNums.(j);
+    bigNums.(j) <- temp3
+  in
+
+  let t = 
+    Array.init (rows-1) 
+    (
+      fun i -> let b = Bitv.create (rows-1) false in 
+               Bitv.set b i true;
+               b
+    )
+  in
+  (* actual pivot *)
+  for j=0 to min (rows - 1) (cols - 1) do 
+    (
+    (* for each column *)
+    Printf.printf "\nBoucle..\nz\n"; print_matrix z;
+    Printf.printf "\nt\n"; print_matrix t;
+    let found = ref None in 
+    for i=j to (rows-2) do
+      if (Option.is_none !found) then
+        (
+        Printf.printf "finding pivot (with j=%d | i=%d)..\n" j i;
+        (*finding pivot*)
+        if (Bitv.get z.(i) j) then begin
+          found := Some ();
+          Printf.printf "Pivot found : %d\n" i;
+          (*swap columns*)
+          (*i is the pivot index, j is the current column, pivot row must be swaped with j row in 'z'; 't'; 'bigNumbers*)
+          swap_rows bigNumbers z t i j
+        end
+        )
+    done;
+    (*applying modifications from pivot to other rows lower*)
+    let pivot_row_z = z.(j) in 
+    let pivot_row_t = t.(j) in
+    for i=(j+1) to (rows-2) do 
+      z.(i) <- Bitv.bw_xor z.(i) pivot_row_z; 
+      t.(i) <- Bitv.bw_xor t.(i) pivot_row_t
+    done
+    )
+  done;
+  (z, t)
+;;
+
 let pivot_gauss bigList z cols rows =
-  let baseTime = Unix.gettimeofday () in
   let t = 
     let resT = ref [] in
     let i = ref (rows-1) in
@@ -91,8 +163,6 @@ let pivot_gauss bigList z cols rows =
     done;
     !resT
   in
-  
-  let t_time = Unix.gettimeofday () in
 
   let keep_gaussing = ref true in 
   let already_used = ref [] in
@@ -147,6 +217,34 @@ let pivot_gauss bigList z cols rows =
   (z, t)
 ;;
 
+let new_get_matrice_Z_from_list_T list amount_factors diff_factor_list idxHash =
+  let bitvNull = Bitv.create 0 false in
+  let res = Array.make amount_factors bitvNull in
+  let bigRes = Array.make amount_factors (Big_int.zero_big_int) in
+  let rows = ref 1 in
+  List.iteri
+    (
+      fun i (big, curr_facteurs_list) ->
+        
+        let vector = 
+          let v = Bitv.create amount_factors false in
+          List.iter 
+            (
+              fun value ->
+                let nth = Hashtbl.find idxHash value in
+                Bitv.set v nth (xor (Bitv.get v nth) true) 
+            ) 
+            curr_facteurs_list;
+          v 
+        in
+        res.(i) <- vector;
+        bigRes.(i) <- big;
+        rows := !rows +1
+    )
+    list;
+  (res, bigRes, rows)
+;;
+
 let get_matrice_Z_from_list_T list =
   let (size, idxvalues, idxHash) = create_Z_idx_hashtbl_from_tab_T list in
   let resBig = ref [] in
@@ -179,77 +277,51 @@ let gcd_answer n x y =
   gcd (Big_int.sub_big_int x y) n
 ;;
 
-let resolution_from_file_T n b tab =
-  let pre_time = Unix.gettimeofday () in
-  let (bigList, idxvalues, vectorList) = get_matrice_Z_from_list_T tab in
-  let post_time = Unix.gettimeofday () in 
-  Printf.printf "Running time of get_matrice_Z_from_list_T : %f\n" (post_time-.pre_time);
+let get_gcd_from_z_t z t bigNums rows hash_idx_values n = 
+    let ans = ref None in
+    for i=0 to (rows-1) do
+      if (Option.is_none !ans) then
+        if (Bitv.all_zeros z.(i)) then 
+          (*found an answer*)
+          let all_rows_needed = ref [] in 
+          Bitv.iteri (fun i b -> if b then all_rows_needed:= i :: !all_rows_needed) t.(i);
+          
+          (*calculating X and Y -needed for gcd- *)
+          let x = ref (Big_int.unit_big_int) in 
+          let y = ref (Big_int.unit_big_int) in 
 
-  let idxvaluesLen = List.length idxvalues in
-  let vectorListLen = List.length vectorList in
-  let pre_time = Unix.gettimeofday () in
-  let (z, t) = pivot_gauss bigList vectorList (idxvaluesLen) (vectorListLen) in
-  let post_time = Unix.gettimeofday () in 
-  Printf.printf "Running time of Gauss : %f\n" (post_time-.pre_time);
+          List.iter
+          (
+            fun idx ->
+              let curr_big = bigNums.(idx) in 
+              let curr_vect_z = z.(idx) in 
+              x := Big_int.mult_big_int (!x) curr_big;
+              Bitv.iteri (fun indice b -> if b then y:= Big_int.mult_int_big_int (Hashtbl.find hash_idx_values indice) (!y)) curr_vect_z;
+          ) 
+          !all_rows_needed;
+          y:= Big_int.sqrt_big_int (!y);
+          (*if gcd isn't 1 then answer*)
+          let gcd_answer_var = (gcd_answer n !x !y) in
+          if (not (Big_int.eq_big_int gcd_answer_var (Big_int.unit_big_int))) then 
+            ans:=Some gcd_answer_var
+    done;
+    !ans
+;;
 
-  let x = ref (Big_int.unit_big_int) in 
-  let y = ref (Big_int.unit_big_int) in  
-  
-  (* Check for lines in z full of 0*)
-  let check_for_fullZero_line_solution z t =
-
-    let indices_to_x_y indices =
-      let hash_num_occurence = Hashtbl.create idxvaluesLen in
-      List.iter 
-      (fun i -> 
-        let currBig = (List.nth bigList i) in
-        x:= Big_int.mult_big_int (!x) currBig;
-        (*adding y numbers (only one copy of each double X to avoid doing a sqrt after)*)
-        let (_, tab_elem) =
-          List.find (fun (b,l) -> Big_int.eq_big_int b currBig) tab 
-        in
-        List.iter (fun idx -> 
-          match Hashtbl.find_opt hash_num_occurence idx with
-          | None ->  y:= (Big_int.mult_int_big_int idx !y); Hashtbl.replace hash_num_occurence idx ()
-          | Some _ -> Hashtbl.remove hash_num_occurence idx
-          ) tab_elem
-      ) 
-      indices;
-      x:= Big_int.mod_big_int (!x) n;
-      y:= Big_int.mod_big_int (!y) n
-    in
-
-    let rec aux line =
-      if line>=vectorListLen then None 
-      else
-        begin
-          let res = ref [] in
-          let current_vec = List.nth z line in  
-          let is_answer = Bitv.fold_left (fun acc b -> (not b) && acc) true current_vec in 
-          if (is_answer) then
-            let t_vec = List.nth t line in 
-            Bitv.iteri (fun idx b-> if b then res:= !res@[idx]) t_vec;
-            indices_to_x_y (!res);
-            (*if gcd isn't 1 then answer*)
-            let gcd_answer_var = (gcd_answer n !x !y) in
-            if (Big_int.eq_big_int gcd_answer_var (Big_int.unit_big_int)) then
-                aux (line+1)
-            else 
-              Some gcd_answer_var
-          else
-            aux (line+1)
-        end
-    in
-    aux 0
-  in
-
+let resolution_from_file_T n b tab amount_factors diff_factor_list hash =
+  Printf.printf ("Step 1..\n");
+  let (matriceZ, bigNumbers, rows) = new_get_matrice_Z_from_list_T tab amount_factors diff_factor_list hash in
+  Printf.printf ("Step 2..\n");
+  let (z,t) = new_gauss matriceZ bigNumbers !rows amount_factors in
+  Printf.printf ("Printing z and t :\n");
+  Printf.printf "z\n"; print_matrix z;
+  Printf.printf "\nt\n"; print_matrix t;
+  Printf.printf ("Step 3..\n");
+  let gcd = get_gcd_from_z_t z t bigNumbers !rows hash n in 
   (* using GCD to find an answer *)
-
-  let pre_time = Unix.gettimeofday () in
-  match (check_for_fullZero_line_solution z t) with
+  Printf.printf ("Step 4..\n");
+  match (gcd) with
   | None -> failwith "shouldn't happen (end of resultion)"
   | Some gcd ->
       Printf.printf "%s = %s * %s\n" (Big_int.string_of_big_int n) (Big_int.string_of_big_int (Big_int.div_big_int n gcd)) (Big_int.string_of_big_int gcd);
-  let post_time = Unix.gettimeofday () in 
-  Printf.printf "Running time of Solution+GCD : %f\n" (post_time-.pre_time);
 ;;
