@@ -5,6 +5,3 @@ module Main = Dune__exe__Main
 
 (** @canonical Dune__exe.Utilities *)
 module Utilities = Dune__exe__Utilities
-
-module Dune__exe = struct end
-[@@deprecated "this module is shadowed"]
