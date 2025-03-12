@@ -3,5 +3,8 @@
 (** @canonical Dune__exe.Main *)
 module Main = Dune__exe__Main
 
+(** @canonical Dune__exe.Types *)
+module Types = Dune__exe__Types
+
 (** @canonical Dune__exe.Utilities *)
 module Utilities = Dune__exe__Utilities

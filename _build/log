@@ -1,4 +1,4 @@
-# dune exec ./src/main.exe
+# dune exec -- ./src/main.exe -m BitSet -f mini
 # OCAMLPARAM: unset
 # Shared cache: enabled-except-user-rules
 # Shared cache location: /home/dev/.cache/dune/db
@@ -13,4 +13,4 @@
 #  ; build_dir = In_build_dir "default"
 #  ; instrument_with = []
 #  }
-$ /usr/bin/ocamlc.opt -config > /tmp/dune_1f84cd_output
+$ /usr/bin/ocamlc.opt -config > /tmp/dune_f6abe3_output
