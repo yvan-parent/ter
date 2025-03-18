@@ -15,7 +15,7 @@ match (!module_name) with
       M.full_resolution !file_name
   | "BitSet" ->
         let () = failwith "need to fix it -> never ending program" in
-        let module M = Utilities.MakeQuadraticSieve(Types.BitSetImpl) in 
+        let module M = Utilities.MakeQuadraticSieve(Types.BatBitSetImpl) in 
         M.full_resolution !file_name
   | _ -> 
       let module M = Utilities.MakeQuadraticSieve(Types.BitvImpl) in

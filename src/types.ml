@@ -1,97 +1,72 @@
 module type RowType = sig
   type t
 
-  val xor : t -> t -> t
+  val xor : t array -> int -> int -> unit
   val create : int -> t
   val empty : t
   val set : t -> int -> bool -> unit
   val get : t -> int -> bool
   val all_zeros : t -> bool
-  val iteri : (int -> bool -> unit) -> t -> unit
+  val idxSet : t -> int list
 end
 
 
 module BitvImpl : RowType = struct 
   type t = Bitv.t
-  let xor t1 t2 = Bitv.bw_xor t1 t2
   let create i = Bitv.create i false
   let empty = create 0
   let set t i b = Bitv.set t i b
+  let xor matr i j = 
+    matr.(i) <- Bitv.bw_xor (matr.(i)) (matr.(j))
   let get t i = Bitv.get t i 
   let all_zeros t = Bitv.all_zeros t
-  let iteri = Bitv.iteri
+  let iteri f t = Bitv.iteri f t
+  let idxSet t =
+    let all_rows_needed = ref [] in 
+    iteri (fun i b -> if b then all_rows_needed:= i :: !all_rows_needed) t;
+    !all_rows_needed        
 end
 
 (* Very bad one *)
-module ArrayImpl : RowType = struct 
-  type t = bool ref array
-  let xor t1 t2 = 
-    Array.iter2 (fun b1 b2 -> b1 := !b1 <> !b2) t1 t2;
-    t1
-  let create i = Array.init i (fun _ -> ref false)
+module ArrayImpl : RowType = struct
+  type t = bool array
+  let create i = Array.init i (fun _ -> false)
   let empty = create 0
-  let set t i b = Array.set t i (ref b)
-  let get t i = !(Array.get t i)
-  let all_zeros t = Array.for_all (fun b -> not !b) t
-  let iteri f t = Array.iteri (fun i ref_b -> f i !ref_b) t
+  let set t i b = Array.set t i b
+  let get t i = Array.get t i
+  let all_zeros t = Array.for_all (fun b -> not b) t
+  let iteri f t = Array.iteri (fun i b -> f i b) t
+  let xor matr i j = 
+    Array.iteri (fun idx b ->  matr.(i).(idx) <- b <> matr.(i).(idx) ) matr.(j);
+  ;;
+  let idxSet t =
+    let res = ref [] in 
+    iteri (fun i b -> if b then res:= i::!res) t;
+    !res
 end
 
-exception StopAnswer
-module BitSetImpl : RowType = struct
-  type t = BitSet.t
-  let empty = BitSet.empty ()
-  let create i = BitSet.create i 
-  let set t i b = if b then 
-                    BitSet.set t i 
-                  else 
-                    BitSet.unset t i 
-  let get t i = BitSet.is_set t i
-  let xor t1 t2 = 
-    try
-      (
-        let i = ref 0 in 
-        while (true) do 
-          let () =
-          (
-            if (get t2 !i) then 
-              (
-                if (get t1 !i) then 
-                  BitSet.unset t1 !i 
-                else
-                  BitSet.set t1 !i
-              )
-          )
-          in 
-          i:=!i+1
-        done;
-        t1
-      )
-    with _ -> t1
-  ;;
+module BatBitSetImpl : RowType = struct
+  type t = BatBitSet.t
+  let empty = BatBitSet.empty ()
+  let create i = BatBitSet.create i 
+  let set t i b = if b then BatBitSet.set t i else BatBitSet.unset t i 
+  let get t i = BatBitSet.mem t i
   let all_zeros t = 
-    try 
-      (
-        let i = ref 0 in 
-        while (true) do 
-          if (get t !i) then raise StopAnswer
-          else i:=!i+1
-        done;
-        true
-      )
-    with 
-    | StopAnswer -> false
-    | _ -> true
+    match (BatBitSet.next_set_bit t 0) with
+    None -> true
+    | _ -> false
   ;;
-  let iteri f t =
-    try
-      (
-        let i = ref 0 in 
-        while (true) do 
-          let () =
-          (f !i (get t !i)) in 
-          i:=!i+1
-        done;
-      )
-    with _ -> ()
+  let xor matr i j = 
+    BatBitSet.differentiate_sym matr.(i) matr.(j)
   ;;
+
+  let idxSet t =
+    let res = ref [] in 
+    let rec loop k =
+      match (BatBitSet.next_set_bit t k) with 
+      | None -> ()
+      | Some idx -> res:= idx::!res; loop (idx+1)
+    in
+    loop 0;
+    !res
 end

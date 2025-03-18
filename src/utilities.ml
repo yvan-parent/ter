@@ -8,7 +8,7 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
   let get = Row.get
   let all_zeros = Row.all_zeros
   let emptyRow = Row.empty
-  let iteri = Row.iteri
+  let idxSet t = Row.idxSet t
 
   let read_file_T name = 
     let n = ref (Big_int.big_int_of_int 0) in
@@ -113,13 +113,15 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
         done;
       with (StopSearching starting_row) -> 
       (*applying modifications from pivot to other rows lower*)
-      let pivot_row_z = z.(j) in 
-      let pivot_row_t = t.(j) in
-      for i=(starting_row) to (rows-1) do 
+      (* let pivot_row_z = z.(j) in 
+      let pivot_row_t = t.(j) in *)
+      for i=starting_row to (rows-1) do 
         if (get z.(i) j) then
           (
-          z.(i) <- row_xor z.(i) pivot_row_z; 
-          t.(i) <- row_xor t.(i) pivot_row_t
+          (* z.(i) <- row_xor z.(i) pivot_row_z; 
+          t.(i) <- row_xor t.(i) pivot_row_t *)
+          row_xor z i j;
+          row_xor t i j
           )
       done;
       )
@@ -164,8 +166,7 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
         if (Option.is_none !ans) then
           if (all_zeros z.(i)) then 
             (*found an answer*)
-            let all_rows_needed = ref [] in 
-            iteri (fun i b -> if b then all_rows_needed:= i :: !all_rows_needed) t.(i);
+            let all_rows_needed = idxSet t.(i) in
             (*calculating X and Y -needed for gcd- *)
             let x = ref (Big_int.unit_big_int) in 
             let y = ref (Big_int.unit_big_int) in 
@@ -189,7 +190,7 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
                 let factors = loop curr_big tab in 
                 List.iter (fun v -> y:= Big_int.mult_int_big_int v (!y)) factors
             ) 
-            !all_rows_needed;
+            all_rows_needed;
             y:= Big_int.sqrt_big_int (!y);
             
             (*Printf.printf "X=%s |Y=%s \n" (Big_int.string_of_big_int !x)(Big_int.string_of_big_int !y);*)
@@ -206,6 +207,7 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
   let resolution_from_file_T n b tab amount_factors diff_factor_list hash number_of_rows timeShowed =
     match timeShowed with 
     | None -> 
+      let pre_time = Unix.gettimeofday () in
       let (matriceZ, bigNumbers) = new_get_matrice_Z_from_list_T tab amount_factors diff_factor_list hash number_of_rows in
       let (z,t) = new_gauss matriceZ number_of_rows amount_factors in
       let gcd = get_gcd_from_z_t z t bigNumbers number_of_rows n tab in
@@ -214,6 +216,8 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
       | None -> failwith "No solution found, shouldn't happen (ending resolution)"
       | Some gcd ->
           Printf.printf "%s = %s * %s\n%!" (Big_int.string_of_big_int n) (Big_int.string_of_big_int (Big_int.div_big_int n gcd)) (Big_int.string_of_big_int gcd);
+      let post_time = Unix.gettimeofday () in 
+      Printf.printf "Total time : %f\n%!" (post_time-.pre_time);
       )
 
 
@@ -249,6 +253,6 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
 
   let full_resolution file_name =
     let (n, b, tab, amount_factors, diff_factor_list, hash, rows) = read_file_T ("src/test/"^(file_name)^".txt") in
-    resolution_from_file_T n b tab amount_factors diff_factor_list hash rows (Some ())
+    resolution_from_file_T n b tab amount_factors diff_factor_list hash rows None
 
 end

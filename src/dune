@@ -1,6 +1,6 @@
 (executable 
  (name main)
- (libraries num bitv unix extlib)
+ (libraries num bitv unix batteries)
  (modules utilities main types)
  (flags (:standard -w -27)))
  
