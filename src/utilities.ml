@@ -1,5 +1,3 @@
-exception StopSearching of int
-
 module MakeQuadraticSieve (Row : Types.RowType) = struct
   let xor a b = (a || b) && not (a && b)
   let row_xor = Row.xor
@@ -98,31 +96,25 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
     for j=0 to min (rows - 2) (cols - 2) do 
       (
       (* for each column *) 
-      try
-        for i=j to (rows-1) do
-          (* for each line *)
-            (
-            (*finding pivot*)
-            if (get z.(i) j) then begin
-              (*swap columns*)
-              (*i is the pivot index, j is the current column, pivot row must be swaped with j row in 'z'; 't'*)
-              swap_rows z t i j;
-              raise (StopSearching (i+1))
-            end
-            )
-        done;
-      with (StopSearching starting_row) -> 
-      (*applying modifications from pivot to other rows lower*)
-      (* let pivot_row_z = z.(j) in 
-      let pivot_row_t = t.(j) in *)
-      for i=starting_row to (rows-1) do 
-        if (get z.(i) j) then
-          (
-          (* z.(i) <- row_xor z.(i) pivot_row_z; 
-          t.(i) <- row_xor t.(i) pivot_row_t *)
-          row_xor z i j;
-          row_xor t i j
-          )
+      for i=j to (rows-1) do
+        (* for each line *)
+        (
+          (*finding pivot*)
+          let continue = ref true in 
+          if (get z.(i) j && !continue) then begin
+            (*swap columns*)
+            (*i is the pivot index, j is the current column, pivot row must be swaped with j row in 'z'; 't'*)
+            swap_rows z t i j;
+            for id=i+1 to (rows-1) do 
+              if get z.(id) j then
+                (
+                  row_xor z id j;
+                  row_xor t id j;
+                  continue:= false
+                )
+            done;
+          end
+        )
       done;
       )
     done;

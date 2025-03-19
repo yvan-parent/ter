@@ -14,11 +14,11 @@ end
 module BitvImpl : RowType = struct 
   type t = Bitv.t
   let create i = Bitv.create i false
-  let empty = create 0
-  let set t i b = Bitv.set t i b
+  let empty = create 10
+  let set t i b = Bitv.unsafe_set t i b
   let xor matr i j = 
     matr.(i) <- Bitv.bw_xor (matr.(i)) (matr.(j))
-  let get t i = Bitv.get t i 
+  let get t i = Bitv.unsafe_get t i 
   let all_zeros t = Bitv.all_zeros t
   let iteri f t = Bitv.iteri f t
   let idxSet t =
@@ -27,7 +27,6 @@ module BitvImpl : RowType = struct
     !all_rows_needed        
 end
 
-(* Very bad one *)
 module ArrayImpl : RowType = struct
   type t = bool array
   let create i = Array.init i (fun _ -> false)
@@ -48,7 +47,7 @@ end
 module BatBitSetImpl : RowType = struct
   type t = BatBitSet.t
   let empty = BatBitSet.empty ()
-  let create i = BatBitSet.create i 
+  let create i = BatBitSet.create 10
   let set t i b = if b then BatBitSet.set t i else BatBitSet.unset t i 
   let get t i = BatBitSet.mem t i
   let all_zeros t = 

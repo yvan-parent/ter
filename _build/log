@@ -1,4 +1,4 @@
-# dune exec -- ./src/main.exe -m RefArray -f F7
+# dune exec -- ./src/main.exe -m BatBitSet -f T55
 # OCAMLPARAM: unset
 # Shared cache: enabled-except-user-rules
 # Shared cache location: /home/dev/.cache/dune/db
@@ -13,4 +13,7 @@
 #  ; build_dir = In_build_dir "default"
 #  ; instrument_with = []
 #  }
-$ /usr/bin/ocamlc.opt -config > /tmp/dune_c0f6f1_output
+$ /usr/bin/ocamlc.opt -config > /tmp/dune_0ce14d_output
+$ (cd _build/default && /usr/bin/ocamldep.opt -modules -impl src/types.ml) > _build/default/src/.main.eobjs/dune__exe__Types.impl.d
+$ (cd _build/default && /usr/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -w -27 -g -I src/.main.eobjs/byte -I src/.main.eobjs/native -I /home/dev/.opam/default/lib/batteries -I /home/dev/.opam/default/lib/batteries/unthreaded -I /home/dev/.opam/default/lib/bitv -I /home/dev/.opam/default/lib/camlp-streams -I /home/dev/.opam/default/lib/num -I /usr/lib/ocaml/threads -intf-suffix .ml -no-alias-deps -opaque -open Dune__exe -o src/.main.eobjs/native/dune__exe__Types.cmx -c -impl src/types.ml)
+$ (cd _build/default && /usr/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62@67@69-40 -strict-sequence -strict-formats -short-paths -keep-locs -w -27 -g -o src/main.exe /home/dev/.opam/default/lib/num/nums.cmxa -I /home/dev/.opam/default/lib/num -I /home/dev/.opam/default/lib/num /home/dev/.opam/default/lib/bitv/bitv.cmxa /usr/lib/ocaml/unix.cmxa -I /usr/lib/ocaml /usr/lib/ocaml/str.cmxa -I /usr/lib/ocaml /home/dev/.opam/default/lib/camlp-streams/camlp_streams.cmxa /usr/lib/ocaml/bigarray.cmxa -I /usr/lib/ocaml /home/dev/.opam/default/lib/batteries/unthreaded/batteries_unthreaded.cmxa /usr/lib/ocaml/threads/threads.cmxa -I /usr/lib/ocaml /home/dev/.opam/default/lib/batteries/batteries.cmxa src/.main.eobjs/native/dune__exe.cmx src/.main.eobjs/native/dune__exe__Types.cmx src/.main.eobjs/native/dune__exe__Utilities.cmx src/.main.eobjs/native/dune__exe__Main.cmx)
