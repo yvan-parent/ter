@@ -108,8 +108,8 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
             for id=i+1 to (rows-1) do 
               if get z.(id) j then
                 (
-                  row_xor z id j;
-                  row_xor t id j;
+                  row_xor z.(id) z.(j);
+                  row_xor t.(id) t.(j);
                   continue:= false
                 )
             done;

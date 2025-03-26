@@ -1,1 +1,1 @@
-src/types.ml: Array BatBitSet Bitv
+src/types.ml: Array BatBitSet Bitv Z

@@ -13,10 +13,11 @@ match (!module_name) with
   | "RefArray" ->
       let module M = Utilities.MakeQuadraticSieve(Types.ArrayImpl) in 
       M.full_resolution !file_name
-  | "BitSet" ->
-        let () = failwith "need to fix it -> never ending program" in
-        let module M = Utilities.MakeQuadraticSieve(Types.BatBitSetImpl) in 
-        M.full_resolution !file_name
-  | _ -> 
-      let module M = Utilities.MakeQuadraticSieve(Types.BitvImpl) in
+  | "BatBitSet" ->
+      let module M = Utilities.MakeQuadraticSieve(Types.BatBitSetImpl) in 
       M.full_resolution !file_name
+  | "Zarith" ->
+      let module M = Utilities.MakeQuadraticSieve(Types.ZarithImpl) in 
+      M.full_resolution !file_name
+  | _ -> 
+      failwith "Module name not recognized"

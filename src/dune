@@ -1,6 +1,6 @@
 (executable 
  (name main)
- (libraries num bitv unix batteries)
+ (libraries num bitv unix batteries zarith)
  (modules utilities main types)
  (flags (:standard -w -27)))
  
