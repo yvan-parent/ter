@@ -1,12 +1,6 @@
 module MakeQuadraticSieve (Row : Types.RowType) = struct
-  let xor a b = (a || b) && not (a && b)
-  let row_xor = Row.xor
-  let create = Row.create
-  let set = Row.set
-  let get = Row.get
-  let all_zeros = Row.all_zeros
-  let emptyRow = Row.empty
-  let idxSet t = Row.idxSet t
+  open Row
+  let xor_int a b = (a || b) && not (a && b)
 
   let read_file_T name = 
     let n = ref (Big_int.big_int_of_int 0) in
@@ -108,8 +102,8 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
             for id=i+1 to (rows-1) do 
               if get z.(id) j then
                 (
-                  row_xor z.(id) z.(j);
-                  row_xor t.(id) t.(j);
+                  xor z.(id) z.(j);
+                  xor t.(id) t.(j);
                   continue:= false
                 )
             done;
@@ -122,7 +116,7 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
   ;;
 
   let new_get_matrice_Z_from_list_T list amount_factors diff_factor_list idxHash rows =
-    let res = Array.make rows emptyRow in
+    let res = Array.make rows empty in
     let bigRes = Array.make rows (Big_int.zero_big_int) in
     List.iteri
       (
@@ -133,7 +127,7 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
               (
                 fun value ->
                   let nth = Hashtbl.find idxHash value in
-                  set v nth (xor (get v nth) true) 
+                  set v nth (xor_int (get v nth) true) 
               ) 
               curr_facteurs_list;
             v 
