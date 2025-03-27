@@ -1,4 +1,4 @@
-# dune exec -- ./src/main.exe -m Zarith -f F7
+# dune exec -- ./src/main.exe -m Bitv -f T50 -o False
 # OCAMLPARAM: unset
 # Shared cache: enabled-except-user-rules
 # Shared cache location: /home/dev/.cache/dune/db
@@ -13,4 +13,4 @@
 #  ; build_dir = In_build_dir "default"
 #  ; instrument_with = []
 #  }
-$ /usr/bin/ocamlc.opt -config > /tmp/dune_04970c_output
+$ /usr/bin/ocamlc.opt -config > /tmp/dune_7c1580_output

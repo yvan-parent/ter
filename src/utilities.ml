@@ -67,11 +67,22 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
     (* is_opti option : Check if they are useless rows with only 1 column *)
     if is_opti then 
     (
-      Hashtbl.iter (fun k v -> if v = 1 then (
-        rows:=!rows-1;
-        amount_different_factors:=!amount_different_factors-1;
-        let idx = Array.find_index
-        )) index_count
+        Hashtbl.iter
+        (
+          fun solo_val v -> if v = 1 then 
+            (
+              (* Remove rows from tab *)
+              tab := List.filter (fun (big, num_list) -> not (List.mem solo_val num_list)) !tab;
+              if (0<(!rows)-(List.length !tab)) then
+                (
+                  rows:=!rows-1;
+                  amount_different_factors:=!amount_different_factors-1;
+                  (* Remove the factor from different_factors_list *)
+                  different_factors_list:= Array.of_list (List.filter (fun x -> x != solo_val) (Array.to_list !different_factors_list));
+                )
+            )
+        ) 
+        index_count;
     );
 
     let idxHash = Hashtbl.create 128 in
@@ -79,8 +90,9 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
     Array.sort Int.compare !different_factors_list;
     Array.iter (fun value -> 
       Hashtbl.replace idxHash value !idx; 
-      idx:=(!idx)+1) !different_factors_list;
-    (!n, !b, !tab, !amount_different_factors, !different_factors_list, idxHash, !rows)
+      idx:=(!idx)+1) 
+      !different_factors_list;
+    (!n, !b, !tab, !amount_different_factors, idxHash, !rows)
   ;;
 
   let new_gauss z rows cols = 
@@ -136,7 +148,7 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
     (z, t)
   ;;
 
-  let new_get_matrice_Z_from_list_T list amount_factors diff_factor_list idxHash rows =
+  let new_get_matrice_Z_from_list_T list amount_factors idxHash rows =
     let res = Array.make rows empty in
     let bigRes = Array.make rows (Big_int.zero_big_int) in
     List.iteri
@@ -151,7 +163,7 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
                   set v nth (xor_int (get v nth) true) 
               ) 
               curr_facteurs_list;
-            v 
+            v
           in
           res.(i) <- vector;
           bigRes.(i) <- big;
@@ -211,11 +223,11 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
       !ans
   ;;
 
-  let resolution_from_file_T n b tab amount_factors diff_factor_list hash number_of_rows timeShowed =
+  let resolution_from_file_T n b tab amount_factors hash number_of_rows timeShowed =
     match timeShowed with 
     | None -> 
       let pre_time = Unix.gettimeofday () in
-      let (matriceZ, bigNumbers) = new_get_matrice_Z_from_list_T tab amount_factors diff_factor_list hash number_of_rows in
+      let (matriceZ, bigNumbers) = new_get_matrice_Z_from_list_T tab amount_factors hash number_of_rows in
       let (z,t) = new_gauss matriceZ number_of_rows amount_factors in
       let gcd = get_gcd_from_z_t z t bigNumbers number_of_rows n tab in
       let post_time = Unix.gettimeofday () in
@@ -232,7 +244,7 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
       Printf.printf ("\nStep 1..\n%!");
       let pre_time = Unix.gettimeofday () in
       let beginning = pre_time in
-      let (matriceZ, bigNumbers) = new_get_matrice_Z_from_list_T tab amount_factors diff_factor_list hash number_of_rows in
+      let (matriceZ, bigNumbers) = new_get_matrice_Z_from_list_T tab amount_factors hash number_of_rows in
       let post_time = Unix.gettimeofday () in 
       Printf.printf "Running time : %f\n%!" (post_time-.pre_time);
 
@@ -259,7 +271,7 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
   ;;
 
   let full_resolution file_name is_opti =
-    let (n, b, tab, amount_factors, diff_factor_list, hash, rows) = read_file_T ("src/test/"^(file_name)^".txt") is_opti in
-    resolution_from_file_T n b tab amount_factors diff_factor_list hash rows None
+    let (n, b, tab, amount_factors, hash, rows) = read_file_T ("src/test/"^(file_name)^".txt") is_opti in
+    resolution_from_file_T n b tab amount_factors hash rows None
 
 end
