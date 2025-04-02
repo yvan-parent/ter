@@ -2,6 +2,21 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
   open Row
   let xor_int a b = (a || b) && not (a && b)
 
+  (* 
+  This function reads a file similar to T_ files - see test folder -, and returns every usefull informations from it
+
+  Parameters : 
+    - File name (it must be similar to how T_ files are built)
+    - Optimization option (True for optimized version, False for old version)
+  Return value :
+    - (N, b, tab, amount_different_factors, idxHash, rows) :
+          - N is the number we are working on
+          - b is used in order to create all the equations (not used in this program)
+          - tab is a list of all pairs of (BigNumber * (list of factors)) - based on each line of the file -
+          - amount_different_factors is the number of columns - which is the amount of unique factors in it -
+          - idxHash is a Hash table associating every column index to its corresponding factor
+          - rows is the amount of rows in it
+  *)
   let read_file_T name is_opti = 
     let n = ref (Big_int.big_int_of_int 0) in
     let b = ref 0 in
@@ -64,10 +79,10 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
       | e -> raise e
     in
 
-    (* is_opti option : Check if they are useless rows with only 1 column *)
+    (* is_opti option : Check if they are useless rows with only 1 column and removes them (as well as the correspondings columns) *)
     if is_opti then 
-    (
-        Hashtbl.iter
+    (    
+      Hashtbl.iter
         (
           fun solo_val v -> if v = 1 then 
             (
@@ -95,6 +110,18 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
     (!n, !b, !tab, !amount_different_factors, idxHash, !rows)
   ;;
 
+  (* 
+  This function does the Gauss algorithm on arrays of t (type of a row, which represents a bit vector)
+
+  Parameters : 
+    - z (The base Matrix we're doing the algorithm on)
+    - rows (number of rows)
+    - cols (number of cols)
+  Return value :
+    - (Z, T) :
+          - Z is the final state of the base Matrix z
+          - T is the final state of the matrix identity used for the algorithm
+  *)
   let new_gauss z rows cols = 
     (* swaps rows of index i and j for both z and t matrix *)
     let swap_rows z t i j =
@@ -148,14 +175,27 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
     (z, t)
   ;;
 
-  let new_get_matrice_Z_from_list_T list amount_factors idxHash rows =
-    let res = Array.make rows empty in
-    let bigRes = Array.make rows (Big_int.zero_big_int) in
+
+  (* 
+  This function create the base matrix needed for the gauss algorithm (called Z Matrix)
+
+  Parameters : 
+    - tab (corresponds to the tab from the return value of the read_file_T function)
+    - number_of_cols
+    - idxHash (corresponds to the idxHash from the return value of the read_file_T function)
+    - number_of_rows
+  Return value :
+    - Z (the base matrix needed for the gauss algorithm)
+    - bigNumbers (big numbers associated with every row of the matrix)
+  *)
+  let new_get_matrice_Z_from_list_T tab number_of_cols number_of_rows idxHash =
+    let res = Array.make number_of_rows empty in
+    let bigRes = Array.make number_of_rows (Big_int.zero_big_int) in
     List.iteri
       (
         fun i (big, curr_facteurs_list) ->
           let vector = 
-            let v = create amount_factors in
+            let v = create number_of_cols in
             List.iter 
               (
                 fun value ->
@@ -168,10 +208,24 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
           res.(i) <- vector;
           bigRes.(i) <- big;
       )
-      list;
+      tab;
     (res, bigRes) (* Z matrix, their associated Big Int*)
   ;;
 
+  
+  (* 
+  This function calculate a relevant divider of the number N, given the informations from other functions
+
+  Parameters : 
+    - Z (final Z Matrix from the gauss algorithm)
+    - T (final T Matrix from the gauss algorithm)
+    - bigNums (corresponds to the bigNumbers from the return value of the new_get_matrice_z_from_list_T function)
+    - rows (amount of rows)
+    - n (the N number we're working on)
+    - tab (corresponds to the tab from the return value of the read_file_T function)
+  Return value :
+    - Some answer (one of the two divider from an answer), or None if no answer was found (shouldn't happen)
+  *)
   let get_gcd_from_z_t z t bigNums rows n tab = 
     let gcd_answer n x y =
       let gcd a b =
@@ -223,12 +277,24 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
       !ans
   ;;
 
-  let resolution_from_file_T n b tab amount_factors hash number_of_rows timeShowed =
+  
+  (* 
+  This function handles all the process that leads to the final dividers of N
+
+  Parameters : 
+    - n (the N number we're working on)
+    - tab (corresponds to the tab from the return value of the read_file_T function)
+    - number_of_cols
+    - number_of_rows
+    - hash (corresponds to the hashIdx from the return value of the read_file_T function)
+    - timeShowed (option to display to time needed for each function)
+  *)
+  let resolution_from_file_T n tab number_of_cols number_of_rows hash timeShowed =
     match timeShowed with 
     | None -> 
       let pre_time = Unix.gettimeofday () in
-      let (matriceZ, bigNumbers) = new_get_matrice_Z_from_list_T tab amount_factors hash number_of_rows in
-      let (z,t) = new_gauss matriceZ number_of_rows amount_factors in
+      let (matriceZ, bigNumbers) = new_get_matrice_Z_from_list_T tab number_of_cols number_of_rows hash in
+      let (z,t) = new_gauss matriceZ number_of_rows number_of_cols in
       let gcd = get_gcd_from_z_t z t bigNumbers number_of_rows n tab in
       let post_time = Unix.gettimeofday () in
       (
@@ -241,20 +307,20 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
 
 
     | Some _ ->
-      Printf.printf ("\nStep 1..\n%!");
+      Printf.printf ("\nnew_get_matrice_Z_from_list_T..\n%!");
       let pre_time = Unix.gettimeofday () in
       let beginning = pre_time in
-      let (matriceZ, bigNumbers) = new_get_matrice_Z_from_list_T tab amount_factors hash number_of_rows in
+      let (matriceZ, bigNumbers) = new_get_matrice_Z_from_list_T tab number_of_cols number_of_rows hash in
       let post_time = Unix.gettimeofday () in 
       Printf.printf "Running time : %f\n%!" (post_time-.pre_time);
 
-      Printf.printf ("\nStep 2..\n%!");
+      Printf.printf ("\nnew_gauss..\n%!");
       let pre_time = Unix.gettimeofday () in
-      let (z,t) = new_gauss matriceZ number_of_rows amount_factors in
+      let (z,t) = new_gauss matriceZ number_of_rows number_of_cols in
       let post_time = Unix.gettimeofday () in 
       Printf.printf "Running time : %f\n%!" (post_time-.pre_time);
 
-      Printf.printf ("\nStep 3..\n%!");
+      Printf.printf ("\nget_gcd_from_z_t..\n%!");
       let pre_time = Unix.gettimeofday () in
       let gcd = get_gcd_from_z_t z t bigNumbers number_of_rows n tab in 
       (* using GCD to find an answer *)
@@ -270,8 +336,8 @@ module MakeQuadraticSieve (Row : Types.RowType) = struct
           Printf.printf "%s = %s * %s\n%!" (Big_int.string_of_big_int n) (Big_int.string_of_big_int (Big_int.div_big_int n gcd)) (Big_int.string_of_big_int gcd);
   ;;
 
-  let full_resolution file_name is_opti =
-    let (n, b, tab, amount_factors, hash, rows) = read_file_T ("src/test/"^(file_name)^".txt") is_opti in
-    resolution_from_file_T n b tab amount_factors hash rows None
+  let full_resolution file_name is_opti timeShowed =
+    let (n, _, tab, cols, hash, rows) = read_file_T ("src/test/"^(file_name)^".txt") is_opti in
+    resolution_from_file_T n tab cols rows hash timeShowed
 
 end
